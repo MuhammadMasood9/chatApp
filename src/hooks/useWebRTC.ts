@@ -103,15 +103,10 @@ export function useWebRTC(roomId: string) {
           }
 
           if (payload.type === SignalType.Offer) {
-            console.log('Received offer payload.data:', payload.data)
             const data = payload.data as { offer: RTCSessionDescriptionInit; displayName: string } | null
-            console.log('Parsed data:', data)
-            console.log('data.offer:', data?.offer)
-            console.log('data.offer.type:', data?.offer?.type)
-            console.log('data.offer.sdp:', data?.offer?.sdp?.substring(0, 100))
+          
             
             if (!data || !data.offer || !data.offer.sdp) {
-              console.error('Invalid offer received - missing fields:', data)
               return
             }
             const { offer: offerData, displayName: theirName } = data
@@ -121,7 +116,7 @@ export function useWebRTC(roomId: string) {
               type: 'offer' as RTCSdpType,
               sdp: offerData.sdp
             }
-            console.log('Reconstructed offer:', reconstructedOffer)
+          
             
             dispatch(addParticipant({
               userId: payload.from,
@@ -133,7 +128,7 @@ export function useWebRTC(roomId: string) {
 
             try {
               const answer = await pm.handleOffer(payload.from, reconstructedOffer)
-              console.log('Created answer:', answer)
+             
               if (!answer.sdp) {
                 console.error('Invalid answer created - missing sdp:', answer)
                 return
@@ -142,7 +137,7 @@ export function useWebRTC(roomId: string) {
                 type: 'answer' as RTCSdpType,
                 sdp: answer.sdp
               }
-              console.log('Sending valid answer:', validAnswer)
+            
               channel.send({
                 type: 'broadcast',
                 event: 'signal',

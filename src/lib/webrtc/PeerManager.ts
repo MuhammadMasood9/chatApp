@@ -76,7 +76,6 @@ export class PeerManager {
   async createOffer(targetUserId: string): Promise<RTCSessionDescriptionInit | null> {
     const currentState = this.peerStates.get(targetUserId)
     if (currentState === 'have-local-offer') {
-      console.log('createOffer: skipping due to existing local offer for', targetUserId)
       return null
     }
     
@@ -91,27 +90,20 @@ export class PeerManager {
     fromUserId: string,
     offer: RTCSessionDescriptionInit
   ): Promise<RTCSessionDescriptionInit> {
-    console.log('PeerManager.handleOffer received:', offer)
-    console.log('Offer type:', offer.type)
-    console.log('Offer sdp length:', offer.sdp?.length)
     
     if (!offer.type || !offer.sdp) {
-      console.error('Invalid offer in handleOffer - missing type or sdp:', offer)
       throw new Error(`Invalid offer: type=${offer.type}, sdp present=${!!offer.sdp}`)
     }
     
     const currentState = this.peerStates.get(fromUserId)
-    if (currentState === 'have-local-offer') {
-      console.log('handleOffer: handling as remote offer despite having local offer for', fromUserId)
-    }
+  
     
     const pc = this.createPeer(fromUserId, false)
     try {
       await pc.setRemoteDescription(offer)
       this.peerStates.set(fromUserId, 'have-remote-offer')
     } catch (err) {
-      console.error('setRemoteDescription failed:', err)
-      console.error('Offer object:', offer)
+    
       throw err
     }
     const answer = await pc.createAnswer()
@@ -130,10 +122,7 @@ export class PeerManager {
           this.peerStates.set(fromUserId, 'stable')
         } catch (err) {
           console.error('setRemoteDescription failed:', err)
-          console.error('Answer object:', answer)
-          console.error('Peer connection state:', pc.connectionState)
-          console.error('Peer signaling state:', pc.signalingState)
-          // Don't re-throw - this is likely a race condition
+
         }
       } else {
         console.log('handleAnswer: skipping setRemoteDescription due to state:', currentState)
