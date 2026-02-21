@@ -7,12 +7,13 @@ import { remoteStreams } from '@/hooks/useWebRTC'
 
 interface VideoCallProps {
   localStream: MediaStream | null
+  streamVersion?: number
   onEndCall: VoidFunction
   onToggleAudio: VoidFunction
   onToggleVideo: VoidFunction
 }
 
-export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo }: VideoCallProps) => {
+export const VideoCall = ({ localStream, streamVersion, onEndCall, onToggleAudio, onToggleVideo }: VideoCallProps) => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const { isMuted, isVideoOff, participants } = useAppSelector(state => state.call)
 
@@ -21,6 +22,12 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
       localVideoRef.current.srcObject = localStream
     }
   }, [localStream])
+
+  useEffect(() => {
+    const currentStreams = Array.from(remoteStreams.entries())
+    if (currentStreams.length > 0) {
+    }
+  }, [streamVersion])
 
   const participantCount = Object.keys(participants).length + 1
 

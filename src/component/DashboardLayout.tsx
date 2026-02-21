@@ -35,7 +35,7 @@ const DashboardLayout = () => {
   
   const { pendingInvitations, currentInvitation, handleAccept, handleDecline } = useCallInvitation(null, isInCall);
   
-  const { localStream, joinRoom, leaveRoom, toggleAudio, toggleVideo } = useWebRTC(
+  const { localStream, streamVersion, joinRoom, leaveRoom, toggleAudio, toggleVideo } = useWebRTC(
     isInCall && selectedRoomId ? selectedRoomId : ''
   );
 
@@ -167,6 +167,7 @@ const DashboardLayout = () => {
           isInCall ? (
             <VideoCall
               localStream={localStream}
+              streamVersion={streamVersion}
               onEndCall={handleEndCall}
               onToggleAudio={toggleAudio}
               onToggleVideo={toggleVideo}

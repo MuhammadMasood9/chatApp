@@ -24,6 +24,7 @@ export function useWebRTC(roomId: string) {
   const { myUserId, isMuted, isVideoOff } = useAppSelector(s => s.call)
   const { user } = useAppSelector(s => s.auth)
   const displayName = user?.display_name || user?.username || 'Anonymous'
+  const [streamVersion, setStreamVersion] = useState(0)
 
   const localStreamRef = useRef<MediaStream | null>(null)
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
@@ -45,6 +46,7 @@ export function useWebRTC(roomId: string) {
       const pm = new PeerManager(myUserId, {
         onRemoteStream: (userId, stream) => {
           remoteStreams.set(userId, stream)
+          setStreamVersion(v => v + 1)
           dispatch(updateParticipant({ userId, connectionState: 'connected' }))
         },
         onConnectionStateChange: (userId, state) => {
@@ -86,42 +88,87 @@ export function useWebRTC(roomId: string) {
             }))
 
             const offer = await pm.createOffer(payload.from)
-            channel.send({
-              type: 'broadcast',
-              event: 'signal',
-              payload: {
-                type: SignalType.Offer,
-                from: myUserId,
-                target: payload.from,
-                data: offer,
-              } satisfies SignalPayload,
-            })
+            if (offer) {
+              channel.send({
+                type: 'broadcast',
+                event: 'signal',
+                payload: {
+                  type: SignalType.Offer,
+                  from: myUserId,
+                  target: payload.from,
+                  data: { offer, displayName },
+                } satisfies SignalPayload,
+              })
+            }
           }
 
           if (payload.type === SignalType.Offer) {
+            console.log('Received offer payload.data:', payload.data)
+            const data = payload.data as { offer: RTCSessionDescriptionInit; displayName: string } | null
+            console.log('Parsed data:', data)
+            console.log('data.offer:', data?.offer)
+            console.log('data.offer.type:', data?.offer?.type)
+            console.log('data.offer.sdp:', data?.offer?.sdp?.substring(0, 100))
+            
+            if (!data || !data.offer || !data.offer.sdp) {
+              console.error('Invalid offer received - missing fields:', data)
+              return
+            }
+            const { offer: offerData, displayName: theirName } = data
+            
+            // Reconstruct offer with explicit type to fix serialization issues
+            const reconstructedOffer: RTCSessionDescriptionInit = {
+              type: 'offer' as RTCSdpType,
+              sdp: offerData.sdp
+            }
+            console.log('Reconstructed offer:', reconstructedOffer)
+            
             dispatch(addParticipant({
               userId: payload.from,
-              displayName: payload.from,
+              displayName: theirName || payload.from,
               isMuted: false,
               isVideoOff: false,
               connectionState: 'connecting',
             }))
 
-            const answer = await pm.handleOffer(payload.from, payload.data as RTCSessionDescriptionInit)
-            channel.send({
-              type: 'broadcast',
-              event: 'signal',
-              payload: {
-                type: SignalType.Answer,
-                from: myUserId,
-                target: payload.from,
-                data: answer,
-              } satisfies SignalPayload,
-            })
+            try {
+              const answer = await pm.handleOffer(payload.from, reconstructedOffer)
+              console.log('Created answer:', answer)
+              if (!answer.sdp) {
+                console.error('Invalid answer created - missing sdp:', answer)
+                return
+              }
+              const validAnswer: RTCSessionDescriptionInit = {
+                type: 'answer' as RTCSdpType,
+                sdp: answer.sdp
+              }
+              console.log('Sending valid answer:', validAnswer)
+              channel.send({
+                type: 'broadcast',
+                event: 'signal',
+                payload: {
+                  type: SignalType.Answer,
+                  from: myUserId,
+                  target: payload.from,
+                  data: validAnswer,
+                } satisfies SignalPayload,
+              })
+            } catch (err) {
+              console.error('Error handling offer:', err)
+            }
           }
 
           if (payload.type === SignalType.Answer) {
-            await pm.handleAnswer(payload.from, payload.data as RTCSessionDescriptionInit)
+            const answerData = payload.data as RTCSessionDescriptionInit | null
+            if (!answerData || !answerData.sdp) {
+              console.error('Invalid answer received:', answerData)
+              return
+            }
+            const reconstructedAnswer: RTCSessionDescriptionInit = {
+              type: 'answer',
+              sdp: answerData.sdp
+            }
+            await pm.handleAnswer(payload.from, reconstructedAnswer)
           }
 
           if (payload.type === SignalType.IceCandidate) {
@@ -208,6 +255,7 @@ export function useWebRTC(roomId: string) {
 
   return {
     localStream, 
+    streamVersion,
     joinRoom,
     leaveRoom,
     toggleAudio,

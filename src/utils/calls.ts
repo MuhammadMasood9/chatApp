@@ -28,7 +28,7 @@ export interface SignalPayload {
   type: SignalType
   from: string
   target?: string
-  data: RTCSessionDescriptionInit | RTCIceCandidateInit | { displayName: string } | null
+  data: RTCSessionDescriptionInit | RTCIceCandidateInit | { displayName: string } | { offer: RTCSessionDescriptionInit; displayName: string } | null
 }
 
 export interface CallState {
