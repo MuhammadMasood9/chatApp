@@ -90,26 +90,37 @@ export class PeerManager {
     fromUserId: string,
     offer: RTCSessionDescriptionInit
   ): Promise<RTCSessionDescriptionInit> {
-    
-    // Validate and reconstruct offer if type is null
-    if (!offer.type || !offer.sdp) {
-      if (offer.sdp) {
-        // Reconstruct offer with explicit type if sdp exists but type is null
-        offer = {
-          type: 'offer' as RTCSdpType,
-          sdp: offer.sdp
-        }
-      } else {
-        throw new Error(`Invalid offer: type=${offer.type}, sdp present=${!!offer.sdp}`)
+    const raw: unknown = offer as unknown
+    let parsed: any = raw
+
+    // Some transports can deliver payload.data as a JSON string
+    if (typeof parsed === 'string') {
+      try {
+        parsed = JSON.parse(parsed)
+      } catch {
+        // ignore
       }
     }
-    
+
+    // Accept both shapes: {type,sdp} OR {offer:{type,sdp}}
+    const candidate = parsed?.offer ?? parsed
+    const sdp: unknown = candidate?.sdp
+
+    if (typeof sdp !== 'string' || sdp.length === 0) {
+      throw new Error(`Invalid offer: type=${candidate?.type}, sdp present=${typeof sdp === 'string'}`)
+    }
+
+    // Always force the correct type to avoid null/invalid enum in production.
+    const normalizedOffer: RTCSessionDescriptionInit = {
+      type: 'offer',
+      sdp,
+    }
+
     const currentState = this.peerStates.get(fromUserId)
-  
-    
+
     const pc = this.createPeer(fromUserId, false)
     try {
-      await pc.setRemoteDescription(offer)
+      await pc.setRemoteDescription(normalizedOffer)
       this.peerStates.set(fromUserId, 'have-remote-offer')
     } catch (err) {
     
