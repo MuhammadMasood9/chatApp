@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { FiLogOut } from "react-icons/fi";
 import { useLogin, useRegister } from "@/hooks/useAuth";
 import { useAppSelector } from "@/store/hooks";
 import AuthGuard from "@/component/AuthGuard";
@@ -103,20 +104,7 @@ export default function AuthLayoutRefactored() {
                 border: "1px solid rgba(200,230,250,0.6)",
               }}
             >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#444"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                <polyline points="10 17 15 12 10 7" />
-                <line x1="15" y1="" x2="" y2="" />
-              </svg>
+              <FiLogOut className="w-5 h-5 text-slate-600" />
             </div>
           </div>
 

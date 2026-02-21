@@ -22,23 +22,23 @@ const AuthGuard = ({
 
   const isAuthenticated = !!user;
 
+  useEffect(() => {
+    if (!isLoading && requireAuth && !isAuthenticated) {
+      router.push(redirectTo);
+    }
+  }, [isLoading, requireAuth, isAuthenticated, router, redirectTo]);
+
+  useEffect(() => {
+    if (!isLoading && !requireAuth && isAuthenticated) {
+      router.push(RoutePath.DASHBOARD);
+    }
+  }, [isLoading, requireAuth, isAuthenticated, router]);
+
   if (isLoading) {
     return (
      <Loader/>
     );
   }
-
-  useEffect(() => {
-    if (requireAuth && !isAuthenticated) {
-      router.push(redirectTo);
-    }
-  }, [requireAuth, isAuthenticated, router, redirectTo]);
-
-  useEffect(() => {
-    if (!requireAuth && isAuthenticated) {
-      router.push(RoutePath.DASHBOARD);
-    }
-  }, [requireAuth, isAuthenticated, router]);
 
   if ((requireAuth && !isAuthenticated) || (!requireAuth && isAuthenticated)) {
     return null;

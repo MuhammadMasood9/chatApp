@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhone } from 'react-icons/fi'
+import { useEffect, useRef, useMemo } from 'react'
+import { FiMic, FiMicOff, FiVideo, FiVideoOff } from 'react-icons/fi'
 import { useAppSelector } from '@/store/hooks'
 import { remoteStreams } from '@/hooks/useWebRTC'
 
@@ -22,34 +22,42 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
     }
   }, [localStream])
 
-  const participantCount = Object.keys(participants).length + 1 
+  const participantCount = Object.keys(participants).length + 1
+
+  const gridClasses = useMemo(() => {
+    if (participantCount === 1) return 'grid-cols-1'
+    if (participantCount === 2) return 'grid-cols-1 sm:grid-cols-2'
+    if (participantCount <= 4) return 'grid-cols-1 sm:grid-cols-2'
+    return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+  }, [participantCount])
+
+  const videoHeightClass = useMemo(() => {
+    if (participantCount === 1) return 'h-[60vh] sm:h-[70vh]'
+    if (participantCount === 2) return 'h-[40vh] sm:h-full'
+    return 'h-[35vh] sm:h-[45vh] lg:h-full'
+  }, [participantCount]) 
 
   return (
     <div className="flex flex-col h-full bg-slate-900">
     
-      <div className="flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700">
+      <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-800 border-b border-slate-700">
         <div className="text-white">
-          <h2 className="text-lg font-semibold">Video Call</h2>
-          <p className="text-sm text-slate-300">{participantCount} participant{participantCount !== 1 ? 's' : ''}</p>
+          <h2 className="text-base sm:text-lg font-semibold">Video Call</h2>
+          <p className="text-xs sm:text-sm text-slate-300">{participantCount} participant{participantCount !== 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={onEndCall}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm sm:text-base"
         >
           End Call
         </button>
       </div>
 
     
-      <div className="flex-1 p-4 min-h-0">
-        <div className={`grid gap-4 h-full min-h-[50vh] max-h-[calc(100vh-220px)] ${
-          participantCount === 1 ? 'grid-cols-1' :
-          participantCount === 2 ? 'grid-cols-2' :
-          participantCount <= 4 ? 'grid-cols-2' :
-          'grid-cols-3'
-        }`}>
+      <div className="flex-1 p-2 sm:p-4 min-h-0 overflow-hidden">
+        <div className={`grid gap-2 sm:gap-4 ${gridClasses} h-full`}>
         
-          <div className="relative bg-slate-800 rounded-lg overflow-hidden">
+          <div className={`relative bg-slate-800 rounded-lg overflow-hidden ${videoHeightClass}`}>
             <video
               ref={localVideoRef}
               autoPlay
@@ -59,13 +67,13 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
             />
             {isVideoOff && (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-                <div className="w-20 h-20 bg-slate-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-2xl">You</span>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xl sm:text-2xl">You</span>
                 </div>
               </div>
             )}
-            <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-sm">
-              You {isMuted && '(Muted)'} {isVideoOff && '(Video Off)'}
+            <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs sm:text-sm">
+              You {isMuted && <span className="ml-1">Muted</span>} {isVideoOff && <span className="ml-1">Cam Off</span>}
             </div>
           </div>
 
@@ -73,7 +81,7 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
           {Object.entries(participants).map(([userId, participant]) => {
             const stream = remoteStreams.get(userId)
             return (
-              <div key={userId} className="relative bg-slate-800 rounded-lg overflow-hidden">
+              <div key={userId} className={`relative bg-slate-800 rounded-lg overflow-hidden ${videoHeightClass}`}>
                 {stream ? (
                   <video
                     autoPlay
@@ -87,20 +95,17 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-                    <div className="w-20 h-20 bg-slate-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-2xl">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xl sm:text-2xl">
                         {participant.displayName.slice(0, 2).toUpperCase()}
                       </span>
                     </div>
                   </div>
                 )}
-                <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-sm">
+                <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs sm:text-sm max-w-[90%] truncate">
                   {participant.displayName}
-                  {participant.isMuted && ' (Muted)'}
-                  {participant.isVideoOff && ' (Video Off)'}
-                  <span className="ml-2 text-xs">
-                    ({participant.connectionState})
-                  </span>
+                  {participant.isMuted && <span className="ml-1">Muted</span>}
+                  {participant.isVideoOff && <span className="ml-1">Cam Off</span>}
                 </div>
               </div>
             )
@@ -108,27 +113,27 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-4 bg-slate-800 border-t border-slate-700 space-x-4">
+      <div className="flex items-center justify-center p-3 sm:p-4 bg-slate-800 border-t border-slate-700 space-x-3 sm:space-x-4">
         <button
           onClick={onToggleAudio}
-          className={`p-3 rounded-full transition-colors ${
+          className={`p-2.5 sm:p-3 rounded-full transition-colors ${
             isMuted 
               ? 'bg-red-600 hover:bg-red-700 text-white' 
               : 'bg-slate-700 hover:bg-slate-600 text-white'
           }`}
         >
-          {isMuted ? <FiMicOff className="w-6 h-6" /> : <FiMic className="w-6 h-6" />}
+          {isMuted ? <FiMicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <FiMic className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
 
         <button
           onClick={onToggleVideo}
-          className={`p-3 rounded-full transition-colors ${
+          className={`p-2.5 sm:p-3 rounded-full transition-colors ${
             isVideoOff 
               ? 'bg-red-600 hover:bg-red-700 text-white' 
               : 'bg-slate-700 hover:bg-slate-600 text-white'
           }`}
         >
-          {isVideoOff ? <FiVideoOff className="w-6 h-6" /> : <FiVideo className="w-6 h-6" />}
+          {isVideoOff ? <FiVideoOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <FiVideo className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
       </div>
     </div>
