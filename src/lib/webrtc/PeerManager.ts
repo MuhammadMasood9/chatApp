@@ -14,6 +14,7 @@ export class PeerManager {
   private myUserId: string
   private handlers: PeerEventHandlers
   private peerStates: Map<string, 'idle' | 'have-local-offer' | 'have-remote-offer' | 'stable'> = new Map()
+  private pendingIce: Map<string, RTCIceCandidateInit[]> = new Map()
 
   constructor(myUserId: string, handlers: PeerEventHandlers) {
     this.myUserId = myUserId
@@ -122,6 +123,18 @@ export class PeerManager {
     try {
       await pc.setRemoteDescription(normalizedOffer)
       this.peerStates.set(fromUserId, 'have-remote-offer')
+
+      const queued = this.pendingIce.get(fromUserId)
+      if (queued && queued.length > 0) {
+        for (const c of queued) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(c))
+          } catch {
+            // ignore
+          }
+        }
+        this.pendingIce.delete(fromUserId)
+      }
     } catch (err) {
     
       throw err
@@ -138,8 +151,36 @@ export class PeerManager {
       if (currentState === 'have-local-offer' || currentState === 'have-remote-offer') {
         console.log('handleAnswer: setting remote answer for', fromUserId)
         try {
-          await pc.setRemoteDescription(answer)
+          let normalizedAnswer: RTCSessionDescriptionInit = answer
+          const raw: unknown = answer as unknown
+          let parsed: any = raw
+          if (typeof parsed === 'string') {
+            try {
+              parsed = JSON.parse(parsed)
+            } catch {
+              // ignore
+            }
+          }
+          const candidate = parsed?.answer ?? parsed
+          const sdp: unknown = candidate?.sdp
+          if (typeof sdp === 'string' && sdp.length > 0) {
+            normalizedAnswer = { type: 'answer', sdp }
+          }
+
+          await pc.setRemoteDescription(normalizedAnswer)
           this.peerStates.set(fromUserId, 'stable')
+
+          const queued = this.pendingIce.get(fromUserId)
+          if (queued && queued.length > 0) {
+            for (const c of queued) {
+              try {
+                await pc.addIceCandidate(new RTCIceCandidate(c))
+              } catch {
+                // ignore
+              }
+            }
+            this.pendingIce.delete(fromUserId)
+          }
         } catch (err) {
           console.error('setRemoteDescription failed:', err)
 
@@ -152,9 +193,16 @@ export class PeerManager {
 
   async handleIceCandidate(fromUserId: string, candidate: RTCIceCandidateInit) {
     const pc = this.peers.get(fromUserId)
-    if (pc && pc.remoteDescription) {
-      await pc.addIceCandidate(new RTCIceCandidate(candidate))
+    if (!pc) return
+
+    if (!pc.remoteDescription) {
+      const existing = this.pendingIce.get(fromUserId) ?? []
+      existing.push(candidate)
+      this.pendingIce.set(fromUserId, existing)
+      return
     }
+
+    await pc.addIceCandidate(new RTCIceCandidate(candidate))
   }
 
   removePeer(userId: string) {
@@ -163,6 +211,7 @@ export class PeerManager {
       pc.close()
       this.peers.delete(userId)
       this.peerStates.delete(userId)
+      this.pendingIce.delete(userId)
     }
   }
 
@@ -177,6 +226,7 @@ export class PeerManager {
   destroy() {
     this.peers.forEach(pc => pc.close())
     this.peers.clear()
+    this.pendingIce.clear()
     this.localStream?.getTracks().forEach(t => t.stop())
     this.localStream = null
   }

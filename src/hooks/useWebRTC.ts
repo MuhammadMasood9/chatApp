@@ -87,18 +87,21 @@ export function useWebRTC(roomId: string) {
               connectionState: 'connecting',
             }))
 
-            const offer = await pm.createOffer(payload.from)
-            if (offer) {
-              channel.send({
-                type: 'broadcast',
-                event: 'signal',
-                payload: {
-                  type: SignalType.Offer,
-                  from: myUserId,
-                  target: payload.from,
-                  data: { offer, displayName },
-                } satisfies SignalPayload,
-              })
+            // Deterministic initiator to avoid offer glare (both sides creating offers)
+            if (myUserId.localeCompare(payload.from) < 0) {
+              const offer = await pm.createOffer(payload.from)
+              if (offer) {
+                channel.send({
+                  type: 'broadcast',
+                  event: 'signal',
+                  payload: {
+                    type: SignalType.Offer,
+                    from: myUserId,
+                    target: payload.from,
+                    data: { offer, displayName },
+                  } satisfies SignalPayload,
+                })
+              }
             }
           }
 
