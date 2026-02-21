@@ -91,8 +91,17 @@ export class PeerManager {
     offer: RTCSessionDescriptionInit
   ): Promise<RTCSessionDescriptionInit> {
     
+    // Validate and reconstruct offer if type is null
     if (!offer.type || !offer.sdp) {
-      throw new Error(`Invalid offer: type=${offer.type}, sdp present=${!!offer.sdp}`)
+      if (offer.sdp) {
+        // Reconstruct offer with explicit type if sdp exists but type is null
+        offer = {
+          type: 'offer' as RTCSdpType,
+          sdp: offer.sdp
+        }
+      } else {
+        throw new Error(`Invalid offer: type=${offer.type}, sdp present=${!!offer.sdp}`)
+      }
     }
     
     const currentState = this.peerStates.get(fromUserId)

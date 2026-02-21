@@ -159,8 +159,9 @@ export function useWebRTC(roomId: string) {
               console.error('Invalid answer received:', answerData)
               return
             }
+            
             const reconstructedAnswer: RTCSessionDescriptionInit = {
-              type: 'answer',
+              type: answerData.type || 'answer',
               sdp: answerData.sdp
             }
             await pm.handleAnswer(payload.from, reconstructedAnswer)
