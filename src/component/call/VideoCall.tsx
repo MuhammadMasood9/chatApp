@@ -41,8 +41,8 @@ export const VideoCall = ({ localStream, onEndCall, onToggleAudio, onToggleVideo
       </div>
 
     
-      <div className="flex-1 p-4">
-        <div className={`grid gap-4 h-full ${
+      <div className="flex-1 p-4 min-h-0">
+        <div className={`grid gap-4 h-full min-h-[50vh] max-h-[calc(100vh-220px)] ${
           participantCount === 1 ? 'grid-cols-1' :
           participantCount === 2 ? 'grid-cols-2' :
           participantCount <= 4 ? 'grid-cols-2' :
