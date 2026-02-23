@@ -94,14 +94,12 @@ export const useRegister = () => {
       dispatch(setError(null))
     },
     onSuccess: (data) => {
-      if (data.user) {
+      if (data.user && data.session) {
         const user = transformSupabaseUser(data.user)
         dispatch(setUser(user))
-        
-        if (data.session) {
-          const session = transformSupabaseSession(data.session, user)
-          dispatch(setSession(session))
-        }
+
+        const session = transformSupabaseSession(data.session, user)
+        dispatch(setSession(session))
       }
     },
     onError: (error) => {

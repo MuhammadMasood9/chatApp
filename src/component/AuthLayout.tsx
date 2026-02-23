@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiLogOut } from "react-icons/fi";
 import { useLogin, useRegister } from "@/hooks/useAuth";
 import { useAppSelector } from "@/store/hooks";
@@ -14,6 +14,7 @@ import { AuthMode, AuthFormData } from '@/utils/types';
 export default function AuthLayoutRefactored() {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [clientError, setClientError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState<AuthFormData>({
     email: "",
     password: "",
@@ -28,7 +29,18 @@ export default function AuthLayoutRefactored() {
   const handleInputChange = (field: keyof AuthFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (clientError) setClientError(null)
+    if (successMessage) setSuccessMessage(null)
   };
+
+  useEffect(() => {
+    if (mode !== 'signup') return
+    if (!register.isSuccess) return
+
+    const hasSession = !!register.data?.session
+    if (!hasSession) {
+      setSuccessMessage('Check your email to verify and complete registration.')
+    }
+  }, [mode, register.isSuccess, register.data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +69,7 @@ export default function AuthLayoutRefactored() {
   const toggleMode = () => {
     setMode(mode === "signin" ? "signup" : "signin");
     setClientError(null)
+    setSuccessMessage(null)
   };
 
   const error = clientError || login.error?.message || register.error?.message;
@@ -109,6 +122,10 @@ export default function AuthLayoutRefactored() {
           </div>
 
           <AuthHeader mode={mode} />
+
+          {successMessage && (
+            <p className="mb-3 text-center text-sm text-emerald-600">{successMessage}</p>
+          )}
 
           <AuthForm
             mode={mode}

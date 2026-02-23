@@ -18,9 +18,9 @@ const AuthGuard = ({
   requireAuth = true
 }: AuthGuardProps) => {
   const router = useRouter();
-  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const { session, isLoading } = useAppSelector((state) => state.auth);
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!session;
 
   useEffect(() => {
     if (!isLoading && requireAuth && !isAuthenticated) {
