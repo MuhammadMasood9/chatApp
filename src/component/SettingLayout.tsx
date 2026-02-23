@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiUser, FiMail } from 'react-icons/fi';
 
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { useCallInvitation } from '@/hooks/useCallInvitation';
 import { useLogout } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
@@ -24,16 +24,19 @@ import { SettingsHeader } from '@/component/settings/SettingsHeader';
 import { SettingsSidebar } from '@/component/settings/SettingsSidebar';
 import { FormField } from '@/component/ui/FormField';
 import { Skeleton } from '@/component/ui/Skeleton';
+import { toggleSettingsSidebar, setSettingsSidebarOpen } from '@/store/slices/uiSlice';
 
 const SettingLayout = () => {
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
+  const { sidebar } = useAppSelector((state) => state.ui);
+  const isSidebarOpen = sidebar.settings.isOpen;
+  const dispatch = useAppDispatch();
   const { data: profile, isLoading, error } = useProfile();
   const updateProfile = useUpdateProfile();
   const logout = useLogout();
   useRooms();
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { currentInvitation, handleAccept, handleDecline } = useCallInvitation();
 
   const [activeSection, setActiveSection] = useState('profile');
@@ -140,7 +143,7 @@ const SettingLayout = () => {
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
+          onClick={() => dispatch(toggleSettingsSidebar())}
         />
       )}
 
@@ -160,7 +163,7 @@ const SettingLayout = () => {
           onEditClick={handleEdit}
           onLogout={handleLogout}
           isLogoutPending={logout.isPending}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onToggleSidebar={() => dispatch(toggleSettingsSidebar())}
           showSidebarToggle={true}
         />
 

@@ -5,6 +5,7 @@ import chatReducer from "@/store/slices/chatSlice"
 import presenceReducer from "@/store/slices/presenceSlice"
 import messageReadReducer from "@/store/slices/messageReadSlice"
 import messageComposerReducer from "@/store/slices/messageComposerSlice"
+import uiReducer from "@/store/slices/uiSlice"
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     presence: presenceReducer,
     messageReads: messageReadReducer,
     messageComposer: messageComposerReducer,
+    ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

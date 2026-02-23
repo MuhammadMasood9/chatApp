@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { useRooms, getDirectRoomPeer } from '@/hooks/useRoom';
 import { useWebRTC, remoteStreams } from '@/hooks/useWebRTC';
 import { useCallInvitation } from '@/hooks/useCallInvitation';
@@ -15,13 +15,16 @@ import { CallButton } from '@/component/call/CallButton';
 import { CallInvitationModal } from '@/component/call/CallInvitationModal';
 import { useSearchParams } from 'next/navigation';
 import { usePresenceDbSync } from '@/hooks/usePresenceDbSync';
+import { toggleDashboardSidebar, setDashboardSidebarOpen } from '@/store/slices/uiSlice';
 
 const DashboardLayout = () => {
   const { user } = useAppSelector((state) => state.auth);
+  const { sidebar } = useAppSelector((state) => state.ui);
+  const isSidebarOpen = sidebar.dashboard.isOpen;
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   usePresenceDbSync();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [roomIdFromUrl, setRoomIdFromUrl] = useState<string | null>(null);
 
@@ -69,7 +72,7 @@ const DashboardLayout = () => {
 
   const handleSelectRoom = (id: string) => {
     setSelectedRoomId(id);
-    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+    if (window.innerWidth < 1024) dispatch(setDashboardSidebarOpen(false));
   };
 
   const handleStartCallAfterAccept = useCallback(async () => {
@@ -142,7 +145,7 @@ const DashboardLayout = () => {
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
+          onClick={() => dispatch(toggleDashboardSidebar())}
         />
       )}
 
@@ -152,7 +155,7 @@ const DashboardLayout = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSelectRoom={handleSelectRoom}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={() => dispatch(setDashboardSidebarOpen(false))}
         isOpen={isSidebarOpen}
         getRoomLabel={getRoomLabel}
         getRoomInitials={getRoomInitials}
@@ -176,7 +179,7 @@ const DashboardLayout = () => {
                 label={getRoomLabel(selectedRoom)}
                 initials={getRoomInitials(selectedRoom)}
                 avatarUrl={getRoomAvatarUrl(selectedRoom)}
-                onBack={() => { setSelectedRoomId(null); setIsSidebarOpen(true); }}
+                onBack={() => { setSelectedRoomId(null); dispatch(setDashboardSidebarOpen(true)); }}
                 actions={
                   <CallButton
                     onStartCall={handleStartCall}
@@ -197,7 +200,7 @@ const DashboardLayout = () => {
             </>
           )
         ) : (
-          <EmptyState onOpenSidebar={() => setIsSidebarOpen(true)} />
+          <EmptyState onOpenSidebar={() => dispatch(toggleDashboardSidebar())} />
         )}
       </div>
       <CallInvitationModal
