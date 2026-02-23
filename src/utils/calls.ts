@@ -12,7 +12,13 @@ export enum SignalType {
   IceCandidate = 'ice-candidate',
   UserJoined = 'user-joined',
   UserLeft = 'user-left',
-  CallInvitation = 'call-invitation'
+  CallInvitation = 'call-invitation',
+  MediaState = 'media-state'
+}
+
+export type MediaStatePayload = {
+  isMuted: boolean
+  isVideoOff: boolean
 }
 
 export interface Participant {
@@ -28,7 +34,13 @@ export interface SignalPayload {
   type: SignalType
   from: string
   target?: string
-  data: RTCSessionDescriptionInit | RTCIceCandidateInit | { displayName: string } | { offer: RTCSessionDescriptionInit; displayName: string } | null
+  data:
+    | RTCSessionDescriptionInit
+    | RTCIceCandidateInit
+    | { displayName: string }
+    | { offer: RTCSessionDescriptionInit; displayName: string }
+    | MediaStatePayload
+    | null
 }
 
 export interface CallState {

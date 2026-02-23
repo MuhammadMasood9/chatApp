@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppSelector } from '@/store/hooks'
 import { messageService } from '@/services/messageService'
-import { Message, MessageWithSender, MessageType, SendMessagePayload, EditMessagePayload, UUID, StreamingState } from '@/utils/types'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { MessageWithSender, SendMessagePayload, EditMessagePayload, UUID, StreamingState } from '@/utils/types'
+import { useEffect, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useReduxMessageReads } from '@/hooks/useReduxMessageReads'
 
@@ -62,7 +62,6 @@ export const useStreamingEditMessage = (roomId: string | null) => {
 
 export const useStreamingMessages = (roomId: string | null) => {
   const queryClient = useQueryClient()
-  const { user } = useAppSelector(state => state.auth)
 
   const { 
     markAsRead, 
@@ -80,7 +79,9 @@ export const useStreamingMessages = (roomId: string | null) => {
   useEffect(() => {
     if (!roomId) return
 
-    setStreamingState((prev: StreamingState) => ({ ...prev, connectionStatus: 'connecting' }))
+    queueMicrotask(() => {
+      setStreamingState((prev: StreamingState) => ({ ...prev, connectionStatus: 'connecting' }))
+    })
 
     const channel = messageService.subscribeToMessages(roomId, (newMessage) => {
       queryClient.setQueryData<MessageWithSender[]>(
@@ -123,11 +124,13 @@ export const useStreamingMessages = (roomId: string | null) => {
     return () => {
       channel.unsubscribe()
       channelRef.current = null
-      setStreamingState((prev: StreamingState) => ({ 
-        ...prev, 
-        isConnected: false, 
-        connectionStatus: 'disconnected' 
-      }))
+      queueMicrotask(() => {
+        setStreamingState((prev: StreamingState) => ({
+          ...prev,
+          isConnected: false,
+          connectionStatus: 'disconnected'
+        }))
+      })
     }
   }, [roomId, queryClient])
 

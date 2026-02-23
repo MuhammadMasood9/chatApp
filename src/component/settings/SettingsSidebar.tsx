@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FiArrowLeft, FiUser } from 'react-icons/fi';
+import { FiArrowLeft } from 'react-icons/fi';
 import { getFirstLetter } from '@/helper/text';
 import { useAppSelector } from '@/store/hooks';
 import { SettingsNav } from '@/utils/types';

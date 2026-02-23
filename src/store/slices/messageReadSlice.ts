@@ -46,7 +46,7 @@ const messageReadSlice = createSlice({
       roomId: string
       messageId?: string
     }>) => {
-      const { roomId, messageId } = action.payload
+      const { roomId } = action.payload
       if (state.reads[roomId]) {
         state.reads[roomId].lastReadAt = new Date().toISOString()
         state.reads[roomId].unreadCount = 0

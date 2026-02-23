@@ -81,7 +81,7 @@ export const messageReadService = {
   markRoomAsRead: async (userId: string, roomId: string): Promise<void> => {
     try {
       
-      const { data, error } = await supabaseBrowser()
+      const { error } = await supabaseBrowser()
         .from('message_reads')
         .upsert({
           user_id: userId,

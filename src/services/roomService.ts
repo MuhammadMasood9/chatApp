@@ -1,5 +1,5 @@
 import { supabaseBrowser } from '@/lib/supabase/browser'
-import { Room, RoomType, UUID, RoomWithDetails, RoomMember as RoomMemberType, MemberRole } from '@/utils/types'
+import { RoomType, UUID, RoomWithDetails, MemberRole } from '@/utils/types'
 
 export interface DatabaseRoom {
   id: string;

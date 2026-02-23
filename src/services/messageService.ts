@@ -1,5 +1,5 @@
 import { supabaseBrowser } from '@/lib/supabase/browser'
-import { Message, MessageWithSender, UUID, MessageType, SendMessagePayload, EditMessagePayload } from '@/utils/types'
+import { MessageWithSender, UUID, MessageType, SendMessagePayload, EditMessagePayload } from '@/utils/types'
 
 export interface DatabaseMessage {
   id: string;

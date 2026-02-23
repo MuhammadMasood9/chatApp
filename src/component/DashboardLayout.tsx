@@ -1,11 +1,9 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useRooms, getDirectRoomPeer } from '@/hooks/useRoom';
-import { useStreamingSendMessage } from '@/hooks/useStreamingMessages';
-import { useWebRTC } from '@/hooks/useWebRTC';
+import { useWebRTC, remoteStreams } from '@/hooks/useWebRTC';
 import { useCallInvitation } from '@/hooks/useCallInvitation';
-import { callService } from '@/services/callService';
 import { RoomWithDetails } from '@/utils/types';
 import { Sidebar } from '@/component/dashboard/Sidebar';
 import { ChatHeader } from '@/component/dashboard/ChatHeader';
@@ -25,32 +23,30 @@ const DashboardLayout = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isInCall, setIsInCall] = useState<boolean>(false);
   const [roomIdFromUrl, setRoomIdFromUrl] = useState<string | null>(null);
 
   const { data: rooms = [], isLoading, error } = useRooms();
-  const sendMessage = useStreamingSendMessage(selectedRoomId);
 
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId) ?? null;
   
-  const { pendingInvitations, currentInvitation, handleAccept, handleDecline } = useCallInvitation(null, isInCall);
+  const { currentInvitation, handleAccept, handleDecline, isInCall, setIsInCall, sendInvitation } = useCallInvitation();
   
   const { localStream, streamVersion, joinRoom, leaveRoom, toggleAudio, toggleVideo } = useWebRTC(
     isInCall && selectedRoomId ? selectedRoomId : ''
   );
 
+  const urlRoomId = searchParams.get('roomId');
+
   useEffect(() => {
-    const roomId = searchParams.get('roomId');
-    if (roomId !== roomIdFromUrl) {
-      setRoomIdFromUrl(roomId);
-      if (roomId) {
-        setSelectedRoomId(roomId);
-        setTimeout(() => {
-          setIsInCall(true);
-        }, 1000);
-      }
+    if (urlRoomId !== roomIdFromUrl) {
+      queueMicrotask(() => {
+        setRoomIdFromUrl(urlRoomId);
+        if (urlRoomId) {
+          setSelectedRoomId(urlRoomId);
+        }
+      });
     }
-  }, [roomIdFromUrl]); 
+  }, [urlRoomId, roomIdFromUrl]); 
 
   const getRoomLabel = (room: RoomWithDetails) => {
     if (room.type === 'direct' && user) {
@@ -76,12 +72,12 @@ const DashboardLayout = () => {
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
 
-  const handleStartCallAfterAccept = async () => {
+  const handleStartCallAfterAccept = useCallback(async () => {
     setIsInCall(true);
     setTimeout(async () => {
       await joinRoom();
     }, 100);
-  };
+  }, [joinRoom, setIsInCall]);
 
   useEffect(() => {
     const handleAcceptCall = (event: CustomEvent) => {
@@ -100,7 +96,7 @@ const DashboardLayout = () => {
     return () => {
       window.removeEventListener('accept-call', handleAcceptCall as EventListener);
     };
-  }, [selectedRoomId]);
+  }, [selectedRoomId, handleStartCallAfterAccept]);
 
 
 
@@ -110,10 +106,8 @@ const DashboardLayout = () => {
     try {
       const peer = getDirectRoomPeer(selectedRoom, user.id);
       if (peer) {
-        await callService.sendCallInvitation(selectedRoomId, user.id, peer.userId);
+        await sendInvitation(selectedRoomId, peer.userId);
       }
-      setIsInCall(true);
-      await joinRoom();
     } catch (error) {
       console.error('Failed to start call:', error);
     }
@@ -122,6 +116,9 @@ const DashboardLayout = () => {
   const handleEndCall = async () => {
     await leaveRoom();
     setIsInCall(false);
+    setTimeout(() => {
+      remoteStreams.clear();
+    }, 100);
   };
 
   if (error) {

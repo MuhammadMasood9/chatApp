@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { RoutePath } from '@/constants/routes'
 import { useExchangeCodeForSession } from '@/hooks/useAuth'
@@ -9,7 +9,7 @@ export default function AuthCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const exchange = useExchangeCodeForSession()
-  const [isProcessing, setIsProcessing] = useState(false)
+  const isProcessingRef = useRef(false)
 
   const code = searchParams.get('code')
   const type = searchParams.get('type')
@@ -22,10 +22,10 @@ export default function AuthCallbackPage() {
   }, [type])
 
   useEffect(() => {
-    if (isProcessing) return
+    if (isProcessingRef.current) return
 
     if (error) {
-      setIsProcessing(true)
+      isProcessingRef.current = true
       setTimeout(() => {
         router.replace(RoutePath.AUTH)
       }, 2000)
@@ -33,14 +33,14 @@ export default function AuthCallbackPage() {
     }
 
     if (!code) {
-      setIsProcessing(true)
+      isProcessingRef.current = true
       setTimeout(() => {
         router.replace(RoutePath.AUTH)
       }, 2000)
       return
     }
 
-    setIsProcessing(true)
+    isProcessingRef.current = true
     exchange.mutate(code, {
       onSuccess: () => {
         router.replace(nextPath)
@@ -49,7 +49,7 @@ export default function AuthCallbackPage() {
         router.replace(RoutePath.AUTH)
       },
     })
-  }, [code, error, exchange, nextPath, router, isProcessing])
+  }, [code, error, exchange, nextPath, router])
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden font-sans">

@@ -1,4 +1,4 @@
-import { SettingsNav, FormField, AccountInfo } from '@/utils/settings';
+import { SettingsNav, FormField } from '@/utils/settings';
 import { AuthMode, SettingsTab } from '@/constants/routes';
 import { 
   FiUser, FiShield, FiMail 

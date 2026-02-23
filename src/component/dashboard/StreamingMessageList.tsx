@@ -17,7 +17,6 @@ export const StreamingMessageList = ({ roomId }: StreamingMessageListProps) => {
   const { user } = useAppSelector(state => state.auth)
   const presenceUsers = useAppSelector(state => state.presence.users)
   const currentUserId = user?.id || ''
-  const endRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const typingUsers: TypingUser[] = Object.values(presenceUsers)

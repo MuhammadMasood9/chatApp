@@ -29,7 +29,7 @@ export const profileService = {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/avatar-${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabaseBrowser()
+    const { error } = await supabaseBrowser()
       .storage
       .from('avatars')
       .upload(fileName, file);

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { FiLogOut } from 'react-icons/fi';
-import { useLogout } from '@/hooks/useAuth';
 
 interface SettingsLogoutProps {
   isPending: boolean;

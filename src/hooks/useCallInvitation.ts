@@ -3,13 +3,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAppSelector } from '@/store/hooks'
 import { callService, CallInvitation } from '@/services/callService'
+import { supabaseBrowser } from '@/lib/supabase/browser'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
-export function useCallInvitation(roomId: string | null, isInCall: boolean) {
+type InvitationUpdatePayload = {
+  new: {
+    status: 'pending' | 'accepted' | 'declined' | 'cancelled'
+  }
+}
+
+export function useCallInvitation() {
   const { user } = useAppSelector(state => state.auth)
+  const [isInCall, setIsInCall] = useState<boolean>(false)
   const [pendingInvitations, setPendingInvitations] = useState<CallInvitation[]>([])
   const [currentInvitation, setCurrentInvitation] = useState<CallInvitation | null>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const callerChannelRef = useRef<RealtimeChannel | null>(null)
 
   useEffect(() => {
     if (isInCall || !user) {
@@ -50,6 +59,10 @@ export function useCallInvitation(roomId: string | null, isInCall: boolean) {
         channelRef.current.unsubscribe()
         channelRef.current = null
       }
+      if (callerChannelRef.current) {
+        callerChannelRef.current.unsubscribe()
+        callerChannelRef.current = null
+      }
     }
   }, [isInCall, user]) 
 
@@ -76,12 +89,35 @@ export function useCallInvitation(roomId: string | null, isInCall: boolean) {
     }
   }
 
-  const testInvitation = () => {
-    if (user && roomId) {
-      callService.sendCallInvitation(roomId, user.id, user.id).then(invitation => {
-      }).catch(err => {
-        console.error('Test invitation failed:', err)
-      })
+  const sendInvitation = async (roomId: string, receiverId: string) => {
+    if (!user) return
+    try {
+      const invitation = await callService.sendCallInvitation(roomId, user.id, receiverId)
+      
+      const callerChannel = supabaseBrowser()
+        .channel(`call_invitations:${invitation.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'call_invitations',
+            filter: `id=eq.${invitation.id}`,
+          },
+          async (payload: InvitationUpdatePayload) => {
+            if (payload.new.status === 'accepted') {
+              setIsInCall(true)
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('accept-call', { detail: { roomId: invitation.room_id } }))
+              }, 100)
+            }
+          }
+        )
+        .subscribe()
+      
+      callerChannelRef.current = callerChannel
+    } catch (error) {
+      console.error('Failed to send invitation:', error)
     }
   }
 
@@ -90,6 +126,8 @@ export function useCallInvitation(roomId: string | null, isInCall: boolean) {
     currentInvitation,
     handleAccept,
     handleDecline,
-    testInvitation
+    sendInvitation,
+    isInCall,
+    setIsInCall,
   }
 }

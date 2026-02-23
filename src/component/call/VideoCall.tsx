@@ -44,6 +44,18 @@ export const VideoCall = ({ localStream, streamVersion, onEndCall, onToggleAudio
     return 'h-[35vh] sm:h-[45vh] lg:h-full'
   }, [participantCount]) 
 
+  const remoteVideoRefs = useRef<Map<string, HTMLVideoElement | null>>(new Map())
+
+  useEffect(() => {
+    for (const [userId, stream] of remoteStreams.entries()) {
+      const videoEl = remoteVideoRefs.current.get(userId)
+      if (videoEl && videoEl.srcObject !== stream) {
+        videoEl.srcObject = stream
+        videoEl.play().catch(() => {})
+      }
+    }
+  }, [streamVersion])
+
   return (
     <div className="flex flex-col h-full bg-slate-900">
     
@@ -65,14 +77,20 @@ export const VideoCall = ({ localStream, streamVersion, onEndCall, onToggleAudio
         <div className={`grid gap-2 sm:gap-4 ${gridClasses} h-full`}>
         
           <div className={`relative bg-slate-800 rounded-lg overflow-hidden ${videoHeightClass}`}>
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className={`w-full h-full object-cover ${isVideoOff ? 'hidden' : ''}`}
-            />
-            {isVideoOff && (
+            {localStream && !isVideoOff ? (
+              <video
+                ref={(videoEl) => {
+                  localVideoRef.current = videoEl
+                  if (videoEl && localStream && videoEl.srcObject !== localStream) {
+                    videoEl.srcObject = localStream
+                  }
+                }}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-xl sm:text-2xl">You</span>
@@ -87,14 +105,17 @@ export const VideoCall = ({ localStream, streamVersion, onEndCall, onToggleAudio
        
           {Object.entries(participants).map(([userId, participant]) => {
             const stream = remoteStreams.get(userId)
+            const shouldShowVideo = stream && !participant.isVideoOff
             return (
               <div key={userId} className={`relative bg-slate-800 rounded-lg overflow-hidden ${videoHeightClass}`}>
-                {stream ? (
+                {shouldShowVideo ? (
                   <video
                     autoPlay
                     playsInline
+                    muted
                     className="w-full h-full object-cover"
                     ref={(videoEl) => {
+                      remoteVideoRefs.current.set(userId, videoEl)
                       if (videoEl && videoEl.srcObject !== stream) {
                         videoEl.srcObject = stream
                       }

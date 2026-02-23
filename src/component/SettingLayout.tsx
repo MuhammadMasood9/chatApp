@@ -2,19 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiShield, FiTrash2 } from 'react-icons/fi';
+import { FiUser, FiMail } from 'react-icons/fi';
 
 import { useAppSelector } from '@/store/hooks';
 import { useCallInvitation } from '@/hooks/useCallInvitation';
 import { useLogout } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { getDirectRoomPeer, useRooms } from '@/hooks/useRoom';
+import { useRooms } from '@/hooks/useRoom';
 import { profileService } from '@/services/profileService';
 
 import { RoutePath } from '@/constants/routes';
 import { PROFILE_FORM_FIELDS, SETTINGS_NAV_ITEMS } from '@/constants/settings';
 
-import { AccountInfo, RoomWithDetails, SettingsFormData, User } from '@/utils/types';
+import { AccountInfo, SettingsFormData, User } from '@/utils/types';
 
 import { CallInvitationModal } from '@/component/call/CallInvitationModal';
 import { DangerZone } from '@/component/settings/DangerZone';
@@ -22,7 +22,6 @@ import { ProfileAvatar } from '@/component/settings/ProfileAvatar';
 import { ProfileFormActions } from '@/component/settings/ProfileFormActions';
 import { SettingsHeader } from '@/component/settings/SettingsHeader';
 import { SettingsSidebar } from '@/component/settings/SettingsSidebar';
-import Loader from '@/component/ui/Loader';
 import { FormField } from '@/component/ui/FormField';
 import { Skeleton } from '@/component/ui/Skeleton';
 
@@ -32,13 +31,10 @@ const SettingLayout = () => {
   const { data: profile, isLoading, error } = useProfile();
   const updateProfile = useUpdateProfile();
   const logout = useLogout();
-  const { data: rooms = [] } = useRooms();
+  useRooms();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-
-  const { pendingInvitations, currentInvitation, handleAccept, handleDecline } = useCallInvitation(null, false);
+  const { currentInvitation, handleAccept, handleDecline } = useCallInvitation();
 
   const [activeSection, setActiveSection] = useState('profile');
   const [isEditing, setIsEditing] = useState<boolean>(false);

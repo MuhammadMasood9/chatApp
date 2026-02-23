@@ -17,7 +17,8 @@ const mapPresenceState = (state: RealtimePresenceState<PresenceData>): Record<st
       const first = sessions?.[0]
       if (!first) return null
 
-      const { presence_ref: _presenceRef, ...rest } = first as PresenceData & { presence_ref: string }
+      const { presence_ref, ...rest } = first as PresenceData & { presence_ref: string }
+      void presence_ref
       return [key, rest] as const
     })
     .filter((v): v is readonly [string, PresenceData] => v !== null)

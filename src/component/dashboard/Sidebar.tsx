@@ -2,7 +2,7 @@
 import { FiSearch, FiFilter, FiSettings, FiLogOut, FiUserPlus, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { RoutePath } from '@/constants/routes';
-import { Room, RoomWithDetails } from '@/utils/types';
+import { RoomWithDetails } from '@/utils/types';
 import { ContactsModal } from '@/component/dashboard/Contactsmodal';
 import { useState } from 'react';
 import { useAppSelector } from '@/store/hooks';

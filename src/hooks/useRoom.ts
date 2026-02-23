@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAppSelector } from '@/store/hooks'
 import { roomService } from '@/services/roomService'
-import { Room, RoomWithDetails } from '@/utils/types'
+import { RoomWithDetails } from '@/utils/types'
 
 export const roomKeys = {
   all: (userId: string) => ['rooms', userId] as const,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { FiCamera, FiEdit3, FiCheck, FiX } from 'react-icons/fi';
+import { FiCamera, FiCheck, FiX } from 'react-icons/fi';
 import { getFirstLetter } from '@/helper/text';
 import { SettingsFormData } from '@/utils/types';
 

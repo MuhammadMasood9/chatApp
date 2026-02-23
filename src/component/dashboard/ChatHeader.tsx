@@ -1,5 +1,5 @@
 "use client";
-import { FiPhone, FiVideo, FiGrid, FiChevronLeft } from 'react-icons/fi';
+import { FiChevronLeft } from 'react-icons/fi';
 import { Room } from '@/utils/types';
 
 interface ChatHeaderProps {
@@ -27,6 +27,7 @@ export const ChatHeader = ({ room, label, initials, avatarUrl, onBack, actions }
             alt={label}
             className="w-10 h-10 rounded-xl object-cover shadow-sm"
           />
+       
         ) : (
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-sm">
             {initials}
